@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test WAHA - Debug Mode</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1e1e1e;
+            color: #fff;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #25D366;
+            margin-bottom: 20px;
+        }
+        .test-box {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #444;
+        }
+        .test-box h3 {
+            color: #ffa500;
+            margin-bottom: 15px;
+        }
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: #1e1e1e;
+            border: 1px solid #555;
+            color: #fff;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+        }
+        button {
+            background: #25D366;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #128C7E;
+            color: #fff;
+        }
+        .btn-secondary {
+            background: #6c757d !important;
+            color: #fff !important;
+        }
+        .log {
+            background: #000;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 12px;
+            border: 1px solid #555;
+        }
+        .success { color: #0f0; }
+        .error { color: #f00; }
+        .info { color: #00bfff; }
+        .warning { color: #ffa500; }
+        label {
+            display: block;
+            color: #aaa;
+            margin: 10px 0 5px 0;
+            font-size: 14px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 WAHA Test & Debug Page</h1>
+        
+        <div class="grid">
+            <!-- Test 1: Koneksi -->
+            <div class="test-box">
+                <h3>1️⃣ Test Koneksi WAHA</h3>
+                <button onclick="testConnection()">🔌 Test Koneksi</button>
+                <div id="log1" class="log"></div>
+            </div>
+
+            <!-- Test 2: Kirim Text -->
+            <div class="test-box">
+                <h3>2️⃣ Test Kirim Text</h3>
+                <label>Nomor WhatsApp</label>
+                <input type="text" id="testPhone" placeholder="08123456789" value="08123456789">
+                <label>Pesan</label>
+                <textarea id="testMessage" rows="3" placeholder="Test message">Halo! Ini test message dari WA Blast</textarea>
+                <button onclick="testSendText()">📝 Kirim Text</button>
+                <div id="log2" class="log"></div>
+            </div>
+
+            <!-- Test 3: Kirim Gambar URL -->
+            <div class="test-box">
+                <h3>3️⃣ Test Kirim Gambar (URL)</h3>
+                <label>Nomor WhatsApp</label>
+                <input type="text" id="testPhoneImg" placeholder="08123456789" value="08123456789">
+                <label>URL Gambar</label>
+                <input type="text" id="testImageUrl" placeholder="https://..." value="https://picsum.photos/800/600">
+                <label>Caption</label>
+                <textarea id="testCaption" rows="2" placeholder="Caption gambar">Ini test gambar dari WA Blast</textarea>
+                <button onclick="testSendImage()">🖼️ Kirim Gambar</button>
+                <div id="log3" class="log"></div>
+            </div>
+
+            <!-- Test 4: Check Session -->
+            <div class="test-box">
+                <h3>4️⃣ Cek Status Session</h3>
+                <button onclick="checkSession()">📱 Cek Session</button>
+                <button class="btn-secondary" onclick="clearLogs()">🗑️ Clear All Logs</button>
+                <div id="log4" class="log"></div>
+            </div>
+        </div>
+
+        <!-- Full Log -->
+        <div class="test-box">
+            <h3>📋 Full Debug Log</h3>
+            <div id="fullLog" class="log" style="max-height: 300px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Detect API URL dinamis
+        const currentHost = window.location.hostname;
+        const API_URL = `http://${currentHost}:4000/api`;
+
+        console.log('🌐 Host:', currentHost);
+        console.log('📡 API URL:', API_URL);
+
+        function addLog(logId, message, type = 'info') {
+            const logBox = document.getElementById(logId);
+            const fullLog = document.getElementById('fullLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            
+            const logMessage = `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logBox.innerHTML += logMessage;
+            fullLog.innerHTML += logMessage;
+            
+            logBox.scrollTop = logBox.scrollHeight;
+            fullLog.scrollTop = fullLog.scrollHeight;
+        }
+
+        function clearLogs() {
+            ['log1', 'log2', 'log3', 'log4', 'fullLog'].forEach(id => {
+                document.getElementById(id).innerHTML = '';
+            });
+            addLog('fullLog', '🗑️ Logs cleared', 'info');
+        }
+
+        async function testConnection() {
+            addLog('log1', '🔌 Testing koneksi ke WAHA...', 'info');
+            addLog('log1', `📍 URL: ${API_URL}/test`, 'info');
+            
+            try {
+                const response = await fetch(`${API_URL}/test`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    addLog('log1', '✅ Koneksi BERHASIL!', 'success');
+                    addLog('log1', `📱 Total sessions: ${result.sessions.length}`, 'success');
+                    addLog('log1', `📄 Data: ${JSON.stringify(result.sessions, null, 2)}`, 'info');
+                } else {
+                    addLog('log1', '❌ Koneksi GAGAL!', 'error');
+                    addLog('log1', `Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                addLog('log1', '❌ ERROR!', 'error');
+                addLog('log1', `${error.message}`, 'error');
+                addLog('log1', '💡 Pastikan server berjalan di localhost:4000', 'warning');
+            }
+        }
+
+        async function testSendText() {
+            const phone = document.getElementById('testPhone').value;
+            const message = document.getElementById('testMessage').value;
+            
+            if (!phone || !message) {
+                addLog('log2', '⚠️ Nomor dan pesan harus diisi!', 'warning');
+                return;
+            }
+            
+            addLog('log2', `📤 Mengirim text ke ${phone}...`, 'info');
+            
+            try {
+                const response = await fetch(`${API_URL}/test/send`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phoneNumber: phone,
+                        message: message,
+                        type: 'text'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addLog('log2', '✅ Pesan BERHASIL terkirim!', 'success');
+                    addLog('log2', `📱 Ke: ${result.phone}`, 'success');
+                } else {
+                    addLog('log2', '❌ Pesan GAGAL terkirim!', 'error');
+                    addLog('log2', `Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                addLog('log2', '❌ ERROR!', 'error');
+                addLog('log2', `${error.message}`, 'error');
+            }
+        }
+
+        async function testSendImage() {
+            const phone = document.getElementById('testPhoneImg').value;
+            const imageUrl = document.getElementById('testImageUrl').value;
+            const caption = document.getElementById('testCaption').value;
+            
+            if (!phone || !imageUrl) {
+                addLog('log3', '⚠️ Nomor dan URL gambar harus diisi!', 'warning');
+                return;
+            }
+            
+            addLog('log3', `📤 Mengirim gambar ke ${phone}...`, 'info');
+            addLog('log3', `🔗 URL: ${imageUrl}`, 'info');
+            
+            try {
+                const response = await fetch(`${API_URL}/test/send`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phoneNumber: phone,
+                        message: caption,
+                        imageUrl: imageUrl,
+                        type: 'image'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addLog('log3', '✅ Gambar BERHASIL terkirim!', 'success');
+                    addLog('log3', `📱 Ke: ${result.phone}`, 'success');
+                } else {
+                    addLog('log3', '❌ Gambar GAGAL terkirim!', 'error');
+                    addLog('log3', `Error: ${result.error}`, 'error');
+                    addLog('log3', '💡 Cek apakah URL gambar bisa diakses', 'warning');
+                    addLog('log3', '💡 Cek apakah session WhatsApp aktif', 'warning');
+                }
+            } catch (error) {
+                addLog('log3', '❌ ERROR!', 'error');
+                addLog('log3', `${error.message}`, 'error');
+            }
+        }
+
+        async function checkSession() {
+            addLog('log4', '📱 Mengecek session...', 'info');
+            
+            try {
+                const response = await fetch(`${API_URL}/test`);
+                const result = await response.json();
+                
+                if (result.success && result.sessions) {
+                    addLog('log4', `✅ Session found: ${result.sessions.length}`, 'success');
+                    
+                    result.sessions.forEach((session, i) => {
+                        addLog('log4', `\n📱 Session ${i+1}:`, 'info');
+                        addLog('log4', `   Name: ${session.name || 'N/A'}`, 'info');
+                        addLog('log4', `   Status: ${session.status || 'N/A'}`, session.status === 'WORKING' ? 'success' : 'warning');
+                        
+                        if (session.status !== 'WORKING') {
+                            addLog('log4', '⚠️ Session tidak aktif! Scan QR di WAHA dashboard', 'warning');
+                        }
+                    });
+                } else {
+                    addLog('log4', '❌ Tidak ada session ditemukan', 'error');
+                    addLog('log4', '💡 Buat session di WAHA dashboard terlebih dahulu', 'warning');
+                }
+            } catch (error) {
+                addLog('log4', '❌ ERROR!', 'error');
+                addLog('log4', `${error.message}`, 'error');
+            }
+        }
+
+        // Auto test koneksi saat load
+        window.onload = function() {
+            addLog('fullLog', '🚀 WA Blast Debug Page loaded', 'success');
+            addLog('fullLog', '💡 Klik tombol untuk mulai test', 'info');
+        };
+    </script>
+</body>
+</html>

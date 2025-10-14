@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAHA Plus Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+        }
+
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .config-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .config-item label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .config-item input, .config-item select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .config-item input:focus, .config-item select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .config-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .tabs {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status.pending { background: #ffeaa7; color: #fdcb6e; }
+        .status.running { background: #74b9ff; color: #0984e3; }
+        .status.completed { background: #55efc4; color: #00b894; }
+        .status.failed { background: #ff7675; color: #d63031; }
+        .status.sent { background: #74b9ff; color: #0984e3; }
+        .status.delivered { background: #55efc4; color: #00b894; }
+        .status.read { background: #a29bfe; color: #6c5ce7; }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-success {
+            background: #00b894;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #d63031;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .campaign-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .session-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .status-dot.connected {
+            background: #00b894;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.disconnected {
+            background: #d63031;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #667eea;
+            transition: width 0.3s;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+
+            .stat-card .number {
+                font-size: 24px;
+            }
+
+            .tab-buttons {
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            .tab-btn {
+                flex: 0 0 auto;
+                padding: 8px 16px;
+                font-size: 12px;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+
+            .campaign-actions {
+                flex-direction: column;
+                gap: 2px;
+            }
+
+            .btn {
+                padding: 6px 12px;
+                font-size: 12px;
+                margin: 2px;
+            }
+        }
+
+        /* Better table scrolling on mobile */
+        @media (max-width: 640px) {
+            .tab-content {
+                overflow-x: auto;
+            }
+
+            table {
+                min-width: 600px;
+            }
+        }
+
+        /* Fix status dots */
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 WAHA Plus Dashboard</h1>
+            <p>Monitor dan kelola campaign WhatsApp Anda</p>
+            
+            <div class="config-section">
+                <h3>⚙️ Konfigurasi WAHA Plus</h3>
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label>WAHA URL</label>
+                        <input type="text" id="configWahaUrl" placeholder="http://localhost:5000" value="http://localhost:5000">
+                    </div>
+                    <div class="config-item">
+                        <label>API Server URL</label>
+                        <input type="text" id="configApiUrl" placeholder="http://localhost:4000" value="http://localhost:4000">
+                    </div>
+                    <div class="config-item">
+                        <label>Session Name</label>
+                        <input type="text" id="configSessionName" placeholder="default" value="default">
+                    </div>
+                    <div class="config-item">
+                        <label>API Key</label>
+                        <input type="password" id="configApiKey" placeholder="your-api-key">
+                    </div>
+                </div>
+                <div class="config-buttons">
+                    <button class="btn btn-primary" onclick="saveConfig()">💾 Simpan Konfigurasi</button>
+                    <button class="btn btn-success" onclick="testConnection()">🔌 Test Koneksi</button>
+                    <button class="btn btn-primary" onclick="loadSessions()">🔄 Muat Sessions</button>
+                </div>
+            </div>
+
+            <div class="session-status">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="sessionStatus">Mengecek status...</span>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Campaigns</h3>
+                <div class="number" id="totalCampaigns">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Pesan Terkirim</h3>
+                <div class="number" id="sentMessages">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Balasan Masuk</h3>
+                <div class="number" id="totalReplies">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Balasan Belum Dibaca</h3>
+                <div class="number" id="unreadReplies">-</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="showTab('campaigns')">📋 Campaigns</button>
+                <button class="tab-btn" onclick="showTab('replies')">💬 Balasan</button>
+                <button class="tab-btn" onclick="showTab('contacts')">👥 Kontak</button>
+                <button class="tab-btn" onclick="showTab('create')">➕ Buat Campaign</button>
+            </div>
+
+            <div id="campaigns" class="tab-content active">
+                <h2 style="margin-bottom: 20px;">Daftar Campaigns</h2>
+                <div id="campaignsTable"></div>
+            </div>
+
+            <div id="replies" class="tab-content">
+                <h2 style="margin-bottom: 20px;">Balasan Masuk</h2>
+                <div id="repliesTable"></div>
+            </div>
+
+            <div id="contacts" class="tab-content">
+                <h2 style="margin-bottom: 20px;">Daftar Kontak</h2>
+                <div id="contactsTable"></div>
+            </div>
+
+            <div id="create" class="tab-content">
+                <h2 style="margin-bottom: 20px;">Buat Campaign Baru</h2>
+                <form id="createCampaignForm" style="max-width: 600px;">
+                    <div class="form-group">
+                        <label class="form-label">Nama Campaign</label>
+                        <input type="text" id="campaignName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tipe</label>
+                        <select id="campaignType" class="form-control">
+                            <option value="text">Text</option>
+                            <option value="image">Image</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Pesan</label>
+                        <textarea id="campaignMessage" class="form-control" rows="5" required></textarea>
+                    </div>
+                    <div id="imageUrlDiv" class="form-group" style="display: none;">
+                        <label class="form-label">URL Gambar</label>
+                        <input type="url" id="imageUrl" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nomor Telepon (satu per baris)</label>
+                        <textarea id="campaignContacts" class="form-control" rows="8" placeholder="628123456789&#10;628987654321" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Durasi Typing (ms)</label>
+                        <input type="number" id="typingDuration" class="form-control" value="3000" min="1000" max="10000">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Delay Antar Pesan (ms)</label>
+                        <input type="number" id="delayMessages" class="form-control" value="5000" min="3000" max="60000">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px;">🚀 Buat Campaign</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <button class="refresh-btn" onclick="loadAllData()">🔄</button>
+
+    <script>
+        let CONFIG = {
+            API_URL: 'http://localhost:4000/api',
+            WAHA_URL: 'http://localhost:5000',
+            SESSION_NAME: 'default',
+            API_KEY: ''
+        };
+
+        function loadConfig() {
+            const saved = localStorage.getItem('wahaConfig');
+            if (saved) {
+                try {
+                    CONFIG = JSON.parse(saved);
+                    document.getElementById('configWahaUrl').value = CONFIG.WAHA_URL;
+                    document.getElementById('configApiUrl').value = CONFIG.API_URL.replace('/api', '');
+                    document.getElementById('configSessionName').value = CONFIG.SESSION_NAME;
+                    document.getElementById('configApiKey').value = CONFIG.API_KEY;
+                } catch (e) {
+                    console.error('Error loading config:', e);
+                }
+            }
+        }
+
+        function saveConfig() {
+            const wahaUrl = document.getElementById('configWahaUrl').value || 'http://localhost:5000';
+            const apiUrl = document.getElementById('configApiUrl').value || 'http://localhost:4000';
+            
+            CONFIG.WAHA_URL = wahaUrl;
+            CONFIG.API_URL = apiUrl + '/api';
+            CONFIG.SESSION_NAME = document.getElementById('configSessionName').value || 'default';
+            CONFIG.API_KEY = document.getElementById('configApiKey').value;
+            
+            localStorage.setItem('wahaConfig', JSON.stringify(CONFIG));
+            alert('✅ Konfigurasi berhasil disimpan!');
+        }
+
+        async function testConnection() {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('sessionStatus');
+            
+            statusText.textContent = '🔄 Testing connection...';
+            statusDot.classList.remove('connected', 'disconnected');
+            
+            try {
+                const url = CONFIG.WAHA_URL + '/api/sessions/' + CONFIG.SESSION_NAME;
+                console.log('Testing URL:', url);
+                
+                const response = await fetch(url, {
+                    headers: CONFIG.API_KEY ? {
+                        'X-Api-Key': CONFIG.API_KEY
+                    } : {}
+                });
+                
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+                }
+                
+                const data = await response.json();
+                console.log('Session data:', data);
+                
+                if (data.status === 'WORKING') {
+                    statusDot.classList.add('connected');
+                    statusText.textContent = '✅ Terhubung - ' + (data.me && data.me.user ? data.me.user : CONFIG.SESSION_NAME);
+                    alert('✅ Koneksi berhasil!');
+                } else {
+                    statusDot.classList.add('disconnected');
+                    statusText.textContent = '⚠️ Status: ' + data.status + ' - Scan QR code';
+                    alert('⚠️ Session ditemukan tapi status: ' + data.status + '\nSilakan scan QR code di ' + CONFIG.WAHA_URL);
+                }
+            } catch (error) {
+                console.error('Connection error:', error);
+                statusDot.classList.add('disconnected');
+                statusText.textContent = '❌ Error: ' + error.message;
+                alert('❌ Koneksi gagal!\n\nError: ' + error.message + '\n\nPastikan:\n1. WAHA Plus running di ' + CONFIG.WAHA_URL + '\n2. Session name benar: ' + CONFIG.SESSION_NAME + '\n3. API Key benar (jika diperlukan)');
+            }
+        }
+
+        async function loadSessions() {
+            try {
+                const url = CONFIG.WAHA_URL + '/api/sessions';
+                const response = await fetch(url, {
+                    headers: CONFIG.API_KEY ? {
+                        'X-Api-Key': CONFIG.API_KEY
+                    } : {}
+                });
+                
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                
+                const sessions = await response.json();
+                
+                if (sessions && sessions.length > 0) {
+                    let message = '📱 Sessions tersedia:\n\n';
+                    sessions.forEach(function(s, i) {
+                        message += (i + 1) + '. ' + s.name + ' (' + s.status + ')\n';
+                    });
+                    message += '\nTotal: ' + sessions.length + ' session(s)';
+                    alert(message);
+                } else {
+                    alert('⚠️ Tidak ada session ditemukan.\nBuat session baru di WAHA Plus.');
+                }
+            } catch (error) {
+                alert('❌ Error loading sessions: ' + error.message);
+            }
+        }
+
+        document.getElementById('campaignType').addEventListener('change', function() {
+            const imageUrlDiv = document.getElementById('imageUrlDiv');
+            imageUrlDiv.style.display = this.value === 'image' ? 'block' : 'none';
+        });
+
+        function showTab(tabName) {
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(function(tab) {
+                tab.classList.remove('active');
+            });
+            
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'campaigns') loadCampaigns();
+            if (tabName === 'replies') loadReplies();
+            if (tabName === 'contacts') loadContacts();
+        }
+
+        async function loadStatistics() {
+            try {
+                const response = await fetch(CONFIG.API_URL + '/statistics');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('totalCampaigns').textContent = data.data.totalCampaigns || 0;
+                    document.getElementById('sentMessages').textContent = data.data.sentMessages || 0;
+                    document.getElementById('totalReplies').textContent = data.data.totalReplies || 0;
+                    document.getElementById('unreadReplies').textContent = data.data.unreadReplies || 0;
+                }
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+
+        async function loadSessionStatus() {
+            try {
+                const url = CONFIG.WAHA_URL + '/api/sessions/' + CONFIG.SESSION_NAME;
+                const response = await fetch(url, {
+                    headers: CONFIG.API_KEY ? {
+                        'X-Api-Key': CONFIG.API_KEY
+                    } : {}
+                });
+                
+                const data = await response.json();
+                const statusDot = document.getElementById('statusDot');
+                const statusText = document.getElementById('sessionStatus');
+                
+                if (data.status === 'WORKING') {
+                    statusDot.classList.add('connected');
+                    statusDot.classList.remove('disconnected');
+                    statusText.textContent = '✅ Terhubung - ' + (data.me && data.me.user ? data.me.user : CONFIG.SESSION_NAME);
+                } else {
+                    statusDot.classList.remove('connected');
+                    statusDot.classList.add('disconnected');
+                    statusText.textContent = '❌ Status: ' + data.status + ' - Scan QR code';
+                }
+            } catch (error) {
+                const statusDot = document.getElementById('statusDot');
+                const statusText = document.getElementById('sessionStatus');
+                statusDot.classList.remove('connected');
+                statusDot.classList.add('disconnected');
+                statusText.textContent = '❌ Error: ' + error.message;
+            }
+        }
+
+        async function loadCampaigns() {
+            const container = document.getElementById('campaignsTable');
+            container.innerHTML = '<div class="loading">⏳ Loading campaigns...</div>';
+            
+            try {
+                const response = await fetch(CONFIG.API_URL + '/campaigns');
+                const data = await response.json();
+                
+                if (data.success && data.data.length > 0) {
+                    let html = '<table><thead><tr><th>Nama</th><th>Status</th><th>Target</th><th>Terkirim</th><th>Gagal</th><th>Balasan</th><th>Waktu</th><th>Aksi</th></tr></thead><tbody>';
+                    
+                    data.data.forEach(function(campaign) {
+                        const progress = campaign.total_targets > 0 ? (campaign.sent_count / campaign.total_targets * 100).toFixed(1) : 0;
+                        html += '<tr>';
+                        html += '<td><strong>' + campaign.name + '</strong></td>';
+                        html += '<td><span class="status ' + campaign.status + '">' + campaign.status + '</span></td>';
+                        html += '<td>' + campaign.total_targets + '</td>';
+                        html += '<td>' + campaign.sent_count + '</td>';
+                        html += '<td>' + campaign.failed_count + '</td>';
+                        html += '<td>' + campaign.reply_count + '</td>';
+                        html += '<td>' + new Date(campaign.created_at).toLocaleString('id-ID') + '</td>';
+                        html += '<td class="campaign-actions">';
+                        if (campaign.status === 'pending') {
+                            html += '<button class="btn btn-success" onclick="startCampaign(' + campaign.id + ')">▶️ Start</button>';
+                        }
+                        if (campaign.status === 'running') {
+                            html += '<button class="btn btn-danger" onclick="stopCampaign(' + campaign.id + ')">⏸️ Stop</button>';
+                        }
+                        html += '<button class="btn btn-primary" onclick="viewCampaignDetails(' + campaign.id + ')">👁️</button>';
+                        html += '</td>';
+                        html += '</tr>';
+                        if (campaign.status === 'running') {
+                            html += '<tr><td colspan="8"><div class="progress-bar"><div class="progress-fill" style="width: ' + progress + '%"></div></div></td></tr>';
+                        }
+                    });
+                    
+                    html += '</tbody></table>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div class="empty-state">📋 Belum ada campaign. Buat campaign pertama Anda!</div>';
+                }
+            } catch (error) {
+                container.innerHTML = '<div class="empty-state">❌ Error loading campaigns: ' + error.message + '</div>';
+            }
+        }
+
+        async function startCampaign(id) {
+            if (!confirm('Mulai campaign ini?')) return;
+            
+            try {
+                const response = await fetch(CONFIG.API_URL + '/campaigns/' + id + '/start', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Campaign dimulai!');
+                    loadCampaigns();
+                    loadStatistics();
+                } else {
+                    alert('❌ Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        async function stopCampaign(id) {
+            if (!confirm('Hentikan campaign ini?')) return;
+            
+            try {
+                const response = await fetch(CONFIG.API_URL + '/campaigns/' + id + '/stop', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Campaign dihentikan!');
+                    loadCampaigns();
+                } else {
+                    alert('❌ Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        async function viewCampaignDetails(id) {
+            try {
+                const responses = await Promise.all([
+                    fetch(CONFIG.API_URL + '/campaigns/' + id),
+                    fetch(CONFIG.API_URL + '/campaigns/' + id + '/messages'),
+                    fetch(CONFIG.API_URL + '/campaigns/' + id + '/replies')
+                ]);
+                
+                const campaign = await responses[0].json();
+                const messages = await responses[1].json();
+                const replies = await responses[2].json();
+                
+                let details = '📊 Detail Campaign: ' + campaign.data.name + '\n\n';
+                details += 'Status: ' + campaign.data.status + '\n';
+                details += 'Total Target: ' + campaign.data.total_targets + '\n';
+                details += 'Terkirim: ' + campaign.data.sent_count + '\n';
+                details += 'Gagal: ' + campaign.data.failed_count + '\n';
+                details += 'Balasan: ' + campaign.data.reply_count + '\n\n';
+                details += '📨 Messages: ' + messages.data.length + '\n';
+                details += '💬 Replies: ' + replies.data.length;
+                
+                alert(details);
+            } catch (error) {
+                alert('❌ Error loading details: ' + error.message);
+            }
+        }
+
+        async function loadReplies() {
+            const container = document.getElementById('repliesTable');
+            container.innerHTML = '<div class="loading">⏳ Loading replies...</div>';
+
+            try {
+                const response = await fetch(CONFIG.API_URL + '/replies/unread');
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    let html = '<table><thead><tr><th>Nomor</th><th>Balasan</th><th>Campaign</th><th>Waktu</th><th>Aksi</th></tr></thead><tbody>';
+
+                    data.data.forEach(function(reply) {
+                        html += '<tr>';
+                        html += '<td><strong>' + reply.phone_number + '</strong></td>';
+                        html += '<td>' + (reply.reply_text || '-') + '</td>';
+                        html += '<td>' + (reply.campaign_name || '-') + '</td>';
+                        html += '<td>' + new Date(reply.received_at).toLocaleString('id-ID') + '</td>';
+                        html += '<td><button class="btn btn-primary" onclick="markAsRead(' + reply.id + ')">✓ Tandai Dibaca</button></td>';
+                        html += '</tr>';
+                    });
+
+                    html += '</tbody></table>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div class="empty-state">💬 Belum ada balasan baru</div>';
+                }
+            } catch (error) {
+                container.innerHTML = '<div class="empty-state">❌ Error loading replies: ' + error.message + '</div>';
+            }
+        }
+
+        async function markAsRead(id) {
+            try {
+                await fetch(CONFIG.API_URL + '/replies/' + id + '/read', {
+                    method: 'POST'
+                });
+                loadReplies();
+                loadStatistics();
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        async function loadContacts() {
+            const container = document.getElementById('contactsTable');
+            container.innerHTML = '<div class="loading">⏳ Loading contacts...</div>';
+
+            try {
+                const response = await fetch(CONFIG.API_URL + '/contacts');
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    let html = '<table><thead><tr><th>Nomor</th><th>Nama</th><th>Total Pesan</th><th>Total Balasan</th><th>Terakhir Aktif</th><th>Aksi</th></tr></thead><tbody>';
+
+                    data.data.forEach(function(contact) {
+                        html += '<tr>';
+                        html += '<td><strong>' + contact.phone_number + '</strong></td>';
+                        html += '<td>' + (contact.name || '-') + '</td>';
+                        html += '<td>' + contact.total_messages_sent + '</td>';
+                        html += '<td>' + contact.total_replies + '</td>';
+                        html += '<td>' + (contact.last_message_at ? new Date(contact.last_message_at).toLocaleString('id-ID') : '-') + '</td>';
+                        html += '<td><button class="btn btn-danger" onclick="blockContact(\'' + contact.phone_number + '\')">🚫 Blokir</button></td>';
+                        html += '</tr>';
+                    });
+
+                    html += '</tbody></table>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div class="empty-state">👥 Belum ada kontak</div>';
+                }
+            } catch (error) {
+                container.innerHTML = '<div class="empty-state">❌ Error loading contacts: ' + error.message + '</div>';
+            }
+        }
+
+        async function blockContact(phoneNumber) {
+            if (!confirm('Blokir kontak ' + phoneNumber + '?')) return;
+
+            try {
+                await fetch(CONFIG.API_URL + '/contacts/' + phoneNumber + '/block', {
+                    method: 'POST'
+                });
+                alert('✅ Kontak diblokir!');
+                loadContacts();
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        document.getElementById('createCampaignForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('campaignName').value;
+            const type = document.getElementById('campaignType').value;
+            const message = document.getElementById('campaignMessage').value;
+            const imageUrl = document.getElementById('imageUrl').value;
+            const contactsText = document.getElementById('campaignContacts').value;
+            const typingDuration = parseInt(document.getElementById('typingDuration').value);
+            const delayBetweenMessages = parseInt(document.getElementById('delayMessages').value);
+            
+            const contacts = contactsText.split('\n').map(function(c) {
+                return c.trim();
+            }).filter(function(c) {
+                return c.length > 0;
+            });
+            
+            if (contacts.length === 0) {
+                alert('❌ Masukkan minimal 1 nomor telepon');
+                return;
+            }
+            
+            try {
+                const response = await fetch(CONFIG.API_URL + '/campaigns', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        message: message,
+                        imageUrl: type === 'image' ? imageUrl : null,
+                        caption: type === 'image' ? message : null,
+                        type: type,
+                        contacts: contacts,
+                        typingDuration: typingDuration,
+                        delayBetweenMessages: delayBetweenMessages
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Campaign berhasil dibuat!');
+                    document.getElementById('createCampaignForm').reset();
+                    
+                    const tabs = document.querySelectorAll('.tab-content');
+                    tabs.forEach(function(tab) {
+                        tab.classList.remove('active');
+                    });
+                    document.getElementById('campaigns').classList.add('active');
+                    
+                    const buttons = document.querySelectorAll('.tab-btn');
+                    buttons.forEach(function(btn) {
+                        btn.classList.remove('active');
+                    });
+                    buttons[0].classList.add('active');
+                    
+                    loadCampaigns();
+                    loadStatistics();
+                } else {
+                    alert('❌ Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        });
+
+        function loadAllData() {
+            loadStatistics();
+            loadSessionStatus();
+            loadCampaigns();
+        }
+
+        loadConfig();
+        loadAllData();
+
+        setInterval(function() {
+            loadStatistics();
+            loadSessionStatus();
+        }, 10000);
+    </script>
+</body>
+</html>

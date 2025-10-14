@@ -1,0 +1,24 @@
+services:
+  waha-plus:
+    image: devlikeapro/waha-plus
+    container_name: waha-plus
+    restart: always
+    ports:
+      - "5000:3000"
+    environment:
+      - WAHA_HOST=0.0.0.0
+      - WAHA_LOG_LEVEL=info
+      - WAHA_CORS=*
+      - WHATSAPP_API_KEY=Berhasil_123
+      - WHATSAPP_API_PORT=3000
+      # Uncomment untuk production dengan webhook external
+      # - WHATSAPP_HOOK_URL=https://your-domain.com/api/webhook
+      # - WHATSAPP_HOOK_EVENTS=message,message.ack,state.change
+    volumes:
+      - ./waha_data:/app/.waha
+    networks:
+      - waha-network
+
+networks:
+  waha-network:
+    driver: bridge

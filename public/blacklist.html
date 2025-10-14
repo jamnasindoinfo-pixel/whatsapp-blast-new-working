@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blacklist Management - WA Blast Pro</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .navbar h1 {
+            font-size: 24px;
+        }
+        .navbar nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        .navbar nav a:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        .alert {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .alert h3 {
+            color: #856404;
+            margin-bottom: 8px;
+        }
+        .alert p {
+            color: #856404;
+            line-height: 1.6;
+        }
+        
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        .section-header h2 {
+            color: #2c3e50;
+            font-size: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #495057;
+            font-weight: 600;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #e74c3c;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #229954;
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+        }
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge.auto { background: #fff3cd; color: #856404; }
+        .badge.manual { background: #e7f3ff; color: #004085; }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #95a5a6;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #95a5a6;
+        }
+        
+        .stats-box {
+            background: #fff5f5;
+            border-left: 4px solid #e74c3c;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .stats-box .number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin-bottom: 5px;
+        }
+        .stats-box .label {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>🚫 Blacklist Management</h1>
+        <nav>
+            <a href="/dashboard.html">📊 Dashboard</a>
+            <a href="/index.html">🚀 Blast</a>
+        </nav>
+    </div>
+
+    <div class="container">
+        <!-- Alert Info -->
+        <div class="alert">
+            <h3>⚠️ Tentang Blacklist</h3>
+            <p>
+                Blacklist adalah daftar kontak yang <strong>tidak akan menerima pesan blast</strong>. 
+                Kontak akan otomatis ditambahkan ke blacklist jika terdeteksi <strong>memblokir nomor Anda</strong>. 
+                Anda juga bisa menambahkan kontak secara manual.
+            </p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-box">
+            <div class="number" id="totalBlacklisted">0</div>
+            <div class="label">Total Kontak di Blacklist</div>
+        </div>
+
+        <!-- Add to Blacklist Form -->
+        <div class="section">
+            <div class="section-header">
+                <h2>➕ Tambah ke Blacklist</h2>
+            </div>
+            <div class="grid">
+                <div class="form-group">
+                    <label>Nomor WhatsApp</label>
+                    <input type="text" id="phoneNumber" placeholder="08123456789 atau 6281234567890">
+                </div>
+                <div class="form-group">
+                    <label>Alasan (opsional)</label>
+                    <input type="text" id="reason" placeholder="Contoh: Spam, Tidak relevan, dll">
+                </div>
+            </div>
+            <button class="btn btn-danger" onclick="addToBlacklist()">🚫 Tambah ke Blacklist</button>
+        </div>
+
+        <!-- Blacklist Table -->
+        <div class="section">
+            <div class="section-header">
+                <h2>📋 Daftar Blacklist</h2>
+                <button class="btn btn-success" onclick="refreshBlacklist()">🔄 Refresh</button>
+            </div>
+            <div id="blacklistTable">
+                <div class="loading">Memuat data...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const currentHost = window.location.hostname;
+        const API_URL = `http://${currentHost}:4000/api`;
+
+        // Load blacklist
+        async function loadBlacklist() {
+            try {
+                const response = await fetch(`${API_URL}/blacklist`);
+                const blacklist = await response.json();
+                
+                document.getElementById('totalBlacklisted').textContent = blacklist.length;
+                
+                const container = document.getElementById('blacklistTable');
+                
+                if (blacklist.length === 0) {
+                    container.innerHTML = '<div class="empty-state">✅ Tidak ada kontak di blacklist</div>';
+                    return;
+                }
+                
+                let html = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nomor WhatsApp</th>
+                                <th>Alasan</th>
+                                <th>Type</th>
+                                <th>Tanggal</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                blacklist.forEach((item, index) => {
+                    const isAuto = item.blacklist_reason && item.blacklist_reason.includes('Auto-detected');
+                    const type = isAuto ? 'auto' : 'manual';
+                    const typeLabel = isAuto ? 'Auto' : 'Manual';
+                    
+                    html += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>📱 ${item.phone_number}</td>
+                            <td>${item.blacklist_reason || '-'}</td>
+                            <td><span class="badge ${type}">${typeLabel}</span></td>
+                            <td>${item.blacklisted_at ? new Date(item.blacklisted_at).toLocaleString() : '-'}</td>
+                            <td>
+                                <button class="btn btn-success btn-sm" onclick="removeFromBlacklist('${item.phone_number}')">
+                                    ✅ Hapus
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading blacklist:', error);
+                document.getElementById('blacklistTable').innerHTML = 
+                    '<div class="empty-state">❌ Error memuat data</div>';
+            }
+        }
+
+        // Add to blacklist
+        async function addToBlacklist() {
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const reason = document.getElementById('reason').value.trim();
+            
+            if (!phoneNumber) {
+                alert('⚠️ Nomor WhatsApp harus diisi!');
+                return;
+            }
+            
+            if (!confirm(`Tambahkan ${phoneNumber} ke blacklist?\n\nNomor ini tidak akan menerima blast lagi.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/blacklist`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phoneNumber: phoneNumber,
+                        reason: reason || 'Manually added'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Nomor berhasil ditambahkan ke blacklist!');
+                    document.getElementById('phoneNumber').value = '';
+                    document.getElementById('reason').value = '';
+                    loadBlacklist();
+                } else {
+                    alert('❌ Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        // Remove from blacklist
+        async function removeFromBlacklist(phone) {
+            if (!confirm(`Hapus ${phone} dari blacklist?\n\nNomor ini akan bisa menerima blast lagi.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/blacklist/${phone}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Nomor berhasil dihapus dari blacklist!');
+                    loadBlacklist();
+                } else {
+                    alert('❌ Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        // Refresh blacklist
+        function refreshBlacklist() {
+            loadBlacklist();
+        }
+
+        // Load on page load
+        window.onload = function() {
+            loadBlacklist();
+        };
+    </script>
+</body>
+</html>
