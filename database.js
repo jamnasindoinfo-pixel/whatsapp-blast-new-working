@@ -33,11 +33,25 @@ function initTables() {
       status TEXT DEFAULT 'pending',
       typing_duration INTEGER DEFAULT 3000,
       delay_between_messages INTEGER DEFAULT 5000,
+      session_name TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       started_at DATETIME,
       completed_at DATETIME
     )
   `);
+
+  // Add session_name column to existing campaigns table if it doesn't exist
+  db.all("PRAGMA table_info(campaigns)", (err, columns) => {
+    if (!err && columns && !columns.find(col => col.name === 'session_name')) {
+      db.run("ALTER TABLE campaigns ADD COLUMN session_name TEXT DEFAULT 'default'", (alterErr) => {
+        if (alterErr) {
+          console.error('❌ Error adding session_name column:', alterErr);
+        } else {
+          console.log('✅ Added session_name column to campaigns table');
+        }
+      });
+    }
+  });
 
   // Table: messages
   db.run(`
@@ -97,14 +111,14 @@ function initTables() {
 // ============ CAMPAIGN FUNCTIONS ============
 
 function createCampaign(data, callback) {
-  const { name, message, imageUrl, caption, type, totalTargets, typingDuration, delayBetweenMessages } = data;
-  
+  const { name, message, imageUrl, caption, type, totalTargets, typingDuration, delayBetweenMessages, sessionName } = data;
+
   const sql = `
-    INSERT INTO campaigns (name, message, image_url, caption, type, total_targets, typing_duration, delay_between_messages)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO campaigns (name, message, image_url, caption, type, total_targets, typing_duration, delay_between_messages, session_name)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
-  
-  db.run(sql, [name, message, imageUrl, caption, type || 'text', totalTargets, typingDuration || 3000, delayBetweenMessages || 5000], function(err) {
+
+  db.run(sql, [name, message, imageUrl, caption, type || 'text', totalTargets, typingDuration || 3000, delayBetweenMessages || 5000, sessionName || 'default'], function(err) {
     callback(err, this ? this.lastID : null);
   });
 }

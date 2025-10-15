@@ -130,14 +130,18 @@ const WAHA_API_KEY = process.env.WAHA_API_KEY || 'your-secret-api-key-here';
 const SESSION_NAME = process.env.SESSION_NAME || 'default';
 
 // Helper function untuk mengirim typing indicator
-async function sendTypingIndicator(chatId, duration = 3000) {
+async function sendTypingIndicator(sessionName, chatId, duration = 3000) {
   try {
-    // Kirim status seen
+    console.log(`📝 Sending typing indicator for session: ${sessionName} to ${chatId}`);
+
+    // Kirim status typing menggunakan WAHA endpoint yang benar
     await axios.post(
-      `${WAHA_URL}/api/sendSeen`,
+      `${WAHA_URL}/api/sendTyping`,
       {
-        session: SESSION_NAME,
+        session: sessionName,
         chatId: chatId,
+        duration: duration,
+        textMessage: null // Optional, untuk simulasi typing yang lebih realistis
       },
       {
         headers: {
@@ -147,54 +151,25 @@ async function sendTypingIndicator(chatId, duration = 3000) {
       }
     );
 
-    // Kirim status typing
-    await axios.post(
-      `${WAHA_URL}/api/${SESSION_NAME}/presence`,
-      {
-        chatId: chatId,
-        presence: 'typing',
-      },
-      {
-        headers: {
-          'X-Api-Key': WAHA_API_KEY,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    // Tunggu sesuai durasi typing
-    await new Promise(resolve => setTimeout(resolve, duration));
-
-    // Set presence kembali ke available
-    await axios.post(
-      `${WAHA_URL}/api/${SESSION_NAME}/presence`,
-      {
-        chatId: chatId,
-        presence: 'available',
-      },
-      {
-        headers: {
-          'X-Api-Key': WAHA_API_KEY,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    console.log(`✅ Typing indicator sent for session: ${sessionName}`);
   } catch (error) {
-    console.error('Error sending typing indicator:', error.message);
+    console.error('❌ Error sending typing indicator:', error.message);
+    // Jangan throw error, biarkan proses lanjut tanpa typing indicator
+    console.log('⚠️ Continuing without typing indicator...');
   }
 }
 
 // Fungsi untuk mengirim pesan dengan typing indicator
-async function sendMessageWithTyping(chatId, message, messageId, typingDuration = 3000) {
+async function sendMessageWithTyping(sessionName, chatId, message, messageId, typingDuration = 3000) {
   try {
     // Kirim typing indicator
-    await sendTypingIndicator(chatId, typingDuration);
-    
+    await sendTypingIndicator(sessionName, chatId, typingDuration);
+
     // Kirim pesan
     const response = await axios.post(
       `${WAHA_URL}/api/sendText`,
       {
-        session: SESSION_NAME,
+        session: sessionName,
         chatId: chatId,
         text: message,
       },
@@ -226,10 +201,10 @@ async function sendMessageWithTyping(chatId, message, messageId, typingDuration 
 }
 
 // Fungsi untuk mengirim media dengan typing indicator
-async function sendMediaWithTyping(chatId, mediaUrl, caption, messageId, typingDuration = 3000) {
+async function sendMediaWithTyping(sessionName, chatId, mediaUrl, caption, messageId, typingDuration = 3000) {
   try {
     // Kirim typing indicator
-    await sendTypingIndicator(chatId, typingDuration);
+    await sendTypingIndicator(sessionName, chatId, typingDuration);
     
     // Kirim media sebagai inline media (bukan attachment)
     // Convert localhost URLs to network IP for Docker compatibility
@@ -241,7 +216,7 @@ async function sendMediaWithTyping(chatId, mediaUrl, caption, messageId, typingD
     const response = await axios.post(
       `${WAHA_URL}/api/sendImage`,
       {
-        session: SESSION_NAME,
+        session: sessionName,
         chatId: chatId,
         file: {
           url: finalMediaUrl,
@@ -282,7 +257,7 @@ async function sendMediaWithTyping(chatId, mediaUrl, caption, messageId, typingD
 
 // Buat campaign baru
 app.post('/api/campaigns', (req, res) => {
-  const { name, message, imageUrl, caption, type, contacts, typingDuration, delayBetweenMessages } = req.body;
+  const { name, message, imageUrl, caption, type, contacts, typingDuration, delayBetweenMessages, sessionName } = req.body;
 
   if (!name || !contacts || contacts.length === 0) {
     return res.status(400).json({
@@ -301,6 +276,7 @@ app.post('/api/campaigns', (req, res) => {
     totalTargets: contacts.length,
     typingDuration: typingDuration || 3000,
     delayBetweenMessages: delayBetweenMessages || 5000,
+    sessionName: sessionName || SESSION_NAME,
   }, (err, campaignId) => {
     if (err) {
       return res.status(500).json({ success: false, error: err.message });
@@ -358,6 +334,7 @@ app.get('/api/campaigns/:id', (req, res) => {
 // Start campaign
 app.post('/api/campaigns/:id/start', async (req, res) => {
   const campaignId = req.params.id;
+  const { sessionName } = req.body;
 
   // Get campaign details
   db.getCampaignById(campaignId, async (err, campaign) => {
@@ -375,13 +352,14 @@ app.post('/api/campaigns/:id/start', async (req, res) => {
     res.json({ success: true, message: 'Campaign dimulai' });
 
     // Proses pengiriman di background
-    processCampaign(campaignId, campaign);
+    const sessionToUse = sessionName || campaign.sessionName || SESSION_NAME;
+    processCampaign(campaignId, campaign, sessionToUse);
   });
 });
 
 // Fungsi untuk memproses campaign
-async function processCampaign(campaignId, campaign) {
-  console.log(`🚀 Memulai campaign: ${campaign.name}`);
+async function processCampaign(campaignId, campaign, sessionName = SESSION_NAME) {
+  console.log(`🚀 Memulai campaign: ${campaign.name} (session: ${sessionName})`);
 
   // Get pending messages
   db.getPendingMessages(campaignId, async (err, messages) => {
@@ -401,9 +379,9 @@ async function processCampaign(campaignId, campaign) {
         console.log(`📤 Mengirim pesan ${i + 1}/${messages.length} ke ${msg.phone_number}`);
 
         if (campaign.type === 'text') {
-          await sendMessageWithTyping(chatId, msg.message, msg.id, campaign.typing_duration);
+          await sendMessageWithTyping(sessionName, chatId, msg.message, msg.id, campaign.typing_duration);
         } else if (campaign.type === 'image') {
-          await sendMediaWithTyping(chatId, campaign.image_url, msg.message, msg.id, campaign.typing_duration);
+          await sendMediaWithTyping(sessionName, chatId, campaign.image_url, msg.message, msg.id, campaign.typing_duration);
         }
 
         // Update campaign stats
@@ -556,7 +534,7 @@ app.get('/api/statistics', (req, res) => {
 // Kirim pesan single
 app.post('/api/send-message', async (req, res) => {
   try {
-    const { phone, message, typingDuration } = req.body;
+    const { phone, message, typingDuration, sessionName } = req.body;
 
     if (!phone || !message) {
       return res.status(400).json({
@@ -570,7 +548,8 @@ app.post('/api/send-message', async (req, res) => {
 
     console.log('📱 Formatted chatId:', chatId);
 
-    const result = await sendMessageWithTyping(chatId, message, null, typingDuration || 3000);
+    const sessionToUse = sessionName || SESSION_NAME;
+    const result = await sendMessageWithTyping(sessionToUse, chatId, message, null, typingDuration || 3000);
 
     res.json(result);
   } catch (error) {
@@ -582,9 +561,69 @@ app.post('/api/send-message', async (req, res) => {
   }
 });
 
+// ============ DYNAMIC SESSION MANAGEMENT ENDPOINTS ============
+
+// Get all available sessions from WAHA
+app.get('/api/sessions', async (req, res) => {
+  try {
+    const { url } = req.query;
+    const wahaUrl = url || WAHA_URL;
+
+    console.log('📡 Fetching sessions from WAHA:', wahaUrl);
+
+    const response = await axios.get(`${wahaUrl}/api/sessions`, {
+      headers: {
+        'X-Api-Key': WAHA_API_KEY,
+      },
+    });
+
+    res.json({
+      success: true,
+      sessions: response.data,
+      wahaUrl: wahaUrl
+    });
+  } catch (error) {
+    console.error('Error fetching sessions:', error.message);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      hint: 'Pastikan WAHA Plus berjalan dan API key benar'
+    });
+  }
+});
+
+// Get specific session details
+app.get('/api/sessions/:sessionName', async (req, res) => {
+  try {
+    const { url } = req.query;
+    const sessionName = req.params.sessionName;
+    const wahaUrl = url || WAHA_URL;
+
+    console.log(`🔍 Checking session: ${sessionName} from ${wahaUrl}`);
+
+    const response = await axios.get(`${wahaUrl}/api/sessions/${sessionName}`, {
+      headers: {
+        'X-Api-Key': WAHA_API_KEY,
+      },
+    });
+
+    res.json({
+      success: true,
+      session: response.data,
+      wahaUrl: wahaUrl
+    });
+  } catch (error) {
+    console.error('Error checking session:', error.message);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // ============ WAHA SESSION ENDPOINTS ============
 
-// Cek status sesi
+// Cek status sesi (legacy endpoint)
 app.get('/api/session-status', async (req, res) => {
   try {
     const response = await axios.get(`${WAHA_URL}/api/sessions/${SESSION_NAME}`, {
@@ -605,7 +644,7 @@ app.get('/api/session-status', async (req, res) => {
   }
 });
 
-// Get QR code
+// Get QR code (legacy endpoint)
 app.get('/api/qr-code', async (req, res) => {
   try {
     const response = await axios.get(
@@ -764,7 +803,7 @@ app.get('/api/test', async (req, res) => {
 // Test send message
 app.post('/api/test/send', async (req, res) => {
   try {
-    const { phoneNumber, message, type, imageUrl } = req.body;
+    const { phoneNumber, message, type, imageUrl, sessionName } = req.body;
     
     console.log('📤 Test send request:', { phoneNumber, message, type, imageUrl });
     
@@ -773,6 +812,8 @@ app.post('/api/test/send', async (req, res) => {
     const chatId = cleanPhone.includes('@') ? cleanPhone : `${cleanPhone}@c.us`;
     
     console.log('📱 Formatted chatId:', chatId);
+
+    const sessionToUse = sessionName || SESSION_NAME;
 
     if (type === 'image' && imageUrl) {
       // Use network URL if provided (for WAHA Docker compatibility)
@@ -785,7 +826,7 @@ app.post('/api/test/send', async (req, res) => {
       const response = await axios.post(
         `${WAHA_URL}/api/sendImage`,
         {
-          session: SESSION_NAME,
+          session: sessionToUse,
           chatId: chatId,
           file: {
             url: finalImageUrl,
@@ -816,7 +857,7 @@ app.post('/api/test/send', async (req, res) => {
       const response = await axios.post(
         `${WAHA_URL}/api/sendText`,
         {
-          session: SESSION_NAME,
+          session: sessionToUse,
           chatId: chatId,
           text: message,
         },
@@ -854,7 +895,7 @@ app.post('/api/test/send', async (req, res) => {
 // Blast text
 app.post('/api/blast/text', async (req, res) => {
   try {
-    const { phoneNumbers, message, delayConfig, campaignName } = req.body;
+    const { phoneNumbers, message, delayConfig, campaignName, sessionName } = req.body;
     
     if (!phoneNumbers || !message) {
       return res.status(400).json({
@@ -876,6 +917,7 @@ app.post('/api/blast/text', async (req, res) => {
       totalTargets: phones.length,
       typingDuration: 3000,
       delayBetweenMessages: delayConfig && delayConfig.type === 'fix' ? delayConfig.value * 1000 : 5000,
+      sessionName: sessionName || SESSION_NAME,
     }, (err, campaignId) => {
       if (err) {
         console.error('❌ Error creating campaign:', err);
@@ -912,7 +954,7 @@ app.post('/api/blast/text', async (req, res) => {
                 message: message,
                 typing_duration: 3000,
                 delay_between_messages: delayConfig && delayConfig.type === 'fix' ? delayConfig.value * 1000 : 5000,
-              });
+              }, sessionName || SESSION_NAME);
             }, 1000);
           }
         });
@@ -930,7 +972,7 @@ app.post('/api/blast/text', async (req, res) => {
 // Blast image
 app.post('/api/blast/image', async (req, res) => {
   try {
-    const { phoneNumbers, imageUrl, message, delayConfig, campaignName } = req.body;
+    const { phoneNumbers, imageUrl, message, delayConfig, campaignName, sessionName } = req.body;
     
     if (!phoneNumbers || !imageUrl) {
       return res.status(400).json({
@@ -953,6 +995,7 @@ app.post('/api/blast/image', async (req, res) => {
       totalTargets: phones.length,
       typingDuration: 3000,
       delayBetweenMessages: delayConfig && delayConfig.type === 'fix' ? delayConfig.value * 1000 : 5000,
+      sessionName: sessionName || SESSION_NAME,
     }, (err, campaignId) => {
       if (err) {
         console.error('❌ Error creating campaign:', err);
@@ -988,7 +1031,7 @@ app.post('/api/blast/image', async (req, res) => {
                 message: message,
                 typing_duration: 3000,
                 delay_between_messages: delayConfig && delayConfig.type === 'fix' ? delayConfig.value * 1000 : 5000,
-              });
+              }, sessionName || SESSION_NAME);
             }, 1000);
           }
         });

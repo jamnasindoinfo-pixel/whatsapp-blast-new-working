@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WA Blast - WhatsApp Marketing Tool</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📱</text></svg>">
     <style>
         * {
             margin: 0;
@@ -339,8 +340,15 @@
                         <input type="text" id="wahaUrl" placeholder="http://localhost:5000" value="http://localhost:5000">
                     </div>
                     <div class="form-group">
-                        <label>Session Name</label>
-                        <input type="text" id="sessionName" placeholder="default" value="default">
+                        <label>WhatsApp Session</label>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <select id="sessionSelect" style="flex: 1;">
+                                <option value="">Loading sessions...</option>
+                            </select>
+                            <button type="button" class="btn btn-test" onclick="refreshSessions()">🔄</button>
+                        </div>
+                        <div class="input-hint">Select active WhatsApp session for sending messages</div>
+                        <div id="sessionStatus" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
                     </div>
                 </div>
                 <div class="form-group">
@@ -603,6 +611,7 @@
 
         console.log('🌐 Current Host:', currentHost);
         console.log('📡 API URL:', API_URL);
+        console.log('🌐 Full URL:', window.location.href);
 
         // Tab switching
         function switchTab(tabName) {
@@ -674,7 +683,7 @@
             const config = {
                 wahaUrl: document.getElementById('wahaUrl').value,
                 apiKey: document.getElementById('apiKey').value,
-                sessionName: document.getElementById('sessionName').value,
+                sessionName: document.getElementById('sessionSelect').value,
                 wahaVersion: document.getElementById('wahaVersion').value,
                 typingEnabled: document.getElementById('typingEnabled').checked,
                 typingDuration: parseInt(document.getElementById('typingDuration').value) * 1000
@@ -835,6 +844,8 @@
             addLog(`📱 Total target: ${phones.length} nomor`, 'info');
 
             try {
+                const sessionName = document.getElementById('sessionSelect').value;
+
                 // First test with one number
                 addLog('🔍 Testing pesan ke nomor pertama...', 'info');
                 const testResponse = await fetch(`${API_URL}/test/send`, {
@@ -843,16 +854,17 @@
                     body: JSON.stringify({
                         phoneNumber: phones[0],
                         message: message,
-                        type: 'text'
+                        type: 'text',
+                        sessionName: sessionName
                     })
                 });
 
                 const testResult = await testResponse.json();
-                
+
                 if (!testResponse.ok || !testResult.success) {
                     throw new Error(testResult.error || 'Pesan tidak bisa dikirim. Cek koneksi dan session.');
                 }
-                
+
                 addLog('✅ Test pesan berhasil ke nomor pertama', 'success');
 
                 // Now proceed with blast
@@ -864,7 +876,8 @@
                         phoneNumbers,
                         message,
                         delayConfig,
-                        campaignName: campaignName || `Text Blast ${new Date().toLocaleString()}`
+                        campaignName: campaignName || `Text Blast ${new Date().toLocaleString()}`,
+                        sessionName: sessionName
                     })
                 });
 
@@ -974,6 +987,8 @@
             addLog(`📱 Total target: ${phones.length} nomor`, 'info');
 
             try {
+                const sessionName = document.getElementById('sessionSelect').value;
+
                 // First test the image URL with test endpoint
                 addLog('🔍 Testing image URL...', 'info');
                 const testResponse = await fetch(`${API_URL}/test/send`, {
@@ -983,16 +998,17 @@
                         phoneNumber: phones[0],
                         message: message,
                         imageUrl: imageUrl,
-                        type: 'image'
+                        type: 'image',
+                        sessionName: sessionName
                     })
                 });
 
                 const testResult = await testResponse.json();
-                
+
                 if (!testResponse.ok || !testResult.success) {
                     throw new Error(testResult.error || 'Gambar tidak bisa dikirim. Cek URL gambar dan koneksi.');
                 }
-                
+
                 addLog('✅ Test gambar berhasil ke nomor pertama', 'success');
 
                 // Now proceed with blast
@@ -1005,7 +1021,8 @@
                         imageUrl,
                         message,
                         delayConfig,
-                        campaignName: campaignName || `Image Blast ${new Date().toLocaleString()}`
+                        campaignName: campaignName || `Image Blast ${new Date().toLocaleString()}`,
+                        sessionName: sessionName
                     })
                 });
 
@@ -1160,6 +1177,8 @@
                 addLog('✅ Gambar berhasil diupload: ' + uploadResult.imageId, 'success');
                 addLog('🔗 URL: ' + imageUrl, 'info');
 
+                const sessionName = document.getElementById('sessionSelect').value;
+
                 // Test with one number first
                 addLog('🔍 Testing gambar ke nomor pertama...', 'info');
                 const testResponse = await fetch(`${API_URL}/test/send`, {
@@ -1169,16 +1188,17 @@
                         phoneNumber: phones[0],
                         message: message,
                         imageUrl: imageUrl,
-                        type: 'image'
+                        type: 'image',
+                        sessionName: sessionName
                     })
                 });
 
                 const testResult = await testResponse.json();
-                
+
                 if (!testResponse.ok || !testResult.success) {
                     throw new Error(testResult.error || 'Gambar tidak bisa dikirim. Cek ukuran gambar dan koneksi.');
                 }
-                
+
                 addLog('✅ Test gambar berhasil ke nomor pertama', 'success');
 
                 // Now proceed with blast
@@ -1191,7 +1211,8 @@
                         imageUrl: imageUrl,
                         message,
                         delayConfig,
-                        campaignName: campaignName || `Upload Blast ${new Date().toLocaleString()}`
+                        campaignName: campaignName || `Upload Blast ${new Date().toLocaleString()}`,
+                        sessionName: sessionName
                     })
                 });
 
@@ -1270,32 +1291,171 @@
             }
         }
 
+        // Session management functions
+        async function refreshSessions() {
+            const sessionSelect = document.getElementById('sessionSelect');
+            const sessionStatus = document.getElementById('sessionStatus');
+
+            try {
+                sessionStatus.textContent = '🔄 Loading sessions...';
+                console.log('🔄 Starting to fetch sessions...');
+
+                const wahaUrl = document.getElementById('wahaUrl').value;
+                console.log('📡 WAHA URL:', wahaUrl);
+
+                let sessionUrl = `${API_URL}/sessions`;
+                if (wahaUrl && wahaUrl.trim() !== '') {
+                    sessionUrl += `?url=${encodeURIComponent(wahaUrl)}`;
+                } else {
+                    sessionUrl += '?url=http://localhost:5000'; // Default WAHA URL
+                }
+
+                console.log('📡 Fetching sessions from:', sessionUrl);
+                const response = await fetch(sessionUrl);
+                console.log('📡 Response status:', response.status);
+
+                const data = await response.json();
+                console.log('📡 Session data received:', data);
+
+                if (data.success && data.sessions) {
+                    console.log('✅ Sessions found:', data.sessions.length);
+                    // Clear existing options
+                    sessionSelect.innerHTML = '';
+
+                    if (data.sessions.length === 0) {
+                        sessionSelect.innerHTML = '<option value="">No sessions found</option>';
+                        sessionStatus.textContent = '⚠️ No sessions found in WAHA';
+                        sessionStatus.style.color = '#ffa500';
+                    } else {
+                        // Add sessions to dropdown
+                        data.sessions.forEach(session => {
+                            console.log(`📱 Processing session: ${session.name} - ${session.status}`);
+                            const option = document.createElement('option');
+                            option.value = session.name;
+
+                            // Better display name with user info if available
+                            const displayName = session.me?.pushName || session.me?.user || session.name;
+                            option.textContent = `${displayName} (${session.status})`;
+                            option.disabled = session.status !== 'WORKING';
+
+                            if (session.status === 'WORKING') {
+                                option.title = `✅ Active session - ${displayName} (${session.me?.id || session.name})`;
+                            } else {
+                                option.title = `❌ Inactive session - ${session.status}`;
+                            }
+
+                            sessionSelect.appendChild(option);
+                        });
+
+                        // Select first working session if available
+                        const workingSession = data.sessions.find(s => s.status === 'WORKING');
+                        if (workingSession) {
+                            sessionSelect.value = workingSession.name;
+                            const displayName = workingSession.me?.pushName || workingSession.me?.user || workingSession.name;
+                            sessionStatus.textContent = `✅ Connected to: ${displayName}`;
+                            sessionStatus.style.color = '#28a745';
+                            console.log('✅ Selected working session:', workingSession.name);
+                        } else {
+                            sessionStatus.textContent = '⚠️ No active sessions found';
+                            sessionStatus.style.color = '#ffa500';
+                            console.log('⚠️ No working sessions found');
+                        }
+                    }
+                } else {
+                    console.error('❌ Error in session response:', data);
+                    sessionSelect.innerHTML = '<option value="">Error loading sessions</option>';
+                    sessionStatus.textContent = `❌ Error: ${data.error || 'Unknown error'}`;
+                    sessionStatus.style.color = '#dc3545';
+                }
+            } catch (error) {
+                console.error('❌ Error loading sessions:', error);
+                sessionSelect.innerHTML = '<option value="">Error loading sessions</option>';
+                sessionStatus.textContent = `❌ Connection error: ${error.message}`;
+                sessionStatus.style.color = '#dc3545';
+            }
+        }
+
+        // Handle session change
+        document.getElementById('sessionSelect').addEventListener('change', async function() {
+            const selectedSession = this.value;
+            const sessionStatus = document.getElementById('sessionStatus');
+
+            if (!selectedSession) {
+                sessionStatus.textContent = '⚠️ Please select a session';
+                sessionStatus.style.color = '#ffa500';
+                return;
+            }
+
+            // Get session details
+            try {
+                const wahaUrl = document.getElementById('wahaUrl').value;
+                let sessionUrl = `${API_URL}/sessions/${selectedSession}`;
+                if (wahaUrl && wahaUrl.trim() !== '') {
+                    sessionUrl += `?url=${encodeURIComponent(wahaUrl)}`;
+                } else {
+                    sessionUrl += '?url=http://localhost:5000'; // Default WAHA URL
+                }
+                const response = await fetch(sessionUrl);
+                const data = await response.json();
+
+                if (data.success && data.session) {
+                    if (data.session.status === 'WORKING') {
+                        sessionStatus.textContent = `✅ Connected to: ${data.session.me?.user || data.session.name}`;
+                        sessionStatus.style.color = '#28a745';
+                    } else {
+                        sessionStatus.textContent = `⚠️ Session status: ${data.session.status}`;
+                        sessionStatus.style.color = '#ffa500';
+                    }
+                } else {
+                    sessionStatus.textContent = `❌ Error checking session`;
+                    sessionStatus.style.color = '#dc3545';
+                }
+            } catch (error) {
+                sessionStatus.textContent = `❌ Error: ${error.message}`;
+                sessionStatus.style.color = '#dc3545';
+            }
+        });
+
         // Load config on page load - ENHANCED VERSION
         window.onload = async function() {
             addLog('🚀 WA Blast Pro loaded', 'success');
             addLog('💡 Ready untuk mengirim pesan WhatsApp', 'info');
-            
+
             try {
-                const response = await fetch(`${API_URL}/config`);
-                const config = await response.json();
-                
-                document.getElementById('wahaUrl').value = config.wahaUrl;
-                document.getElementById('sessionName').value = config.sessionName;
-                if (config.wahaVersion) {
-                    document.getElementById('wahaVersion').value = config.wahaVersion;
-                }
-                if (config.typingEnabled !== undefined) {
-                    document.getElementById('typingEnabled').checked = config.typingEnabled;
+                // Try to load config first
+                try {
+                    const response = await fetch(`${API_URL}/config`);
+                    const config = await response.json();
+
+                    document.getElementById('wahaUrl').value = config.wahaUrl || 'http://localhost:5000';
+                    if (config.wahaVersion) {
+                        document.getElementById('wahaVersion').value = config.wahaVersion;
+                    }
+                    if (config.typingEnabled !== undefined) {
+                        document.getElementById('typingEnabled').checked = config.typingEnabled;
+                        toggleTypingDuration();
+                    }
+                    if (config.typingDuration) {
+                        document.getElementById('typingDuration').value = config.typingDuration / 1000;
+                    }
+
+                    addLog('✅ Configuration loaded successfully', 'success');
+                } catch (configError) {
+                    console.warn('Config loading failed, using defaults:', configError);
+                    addLog('⚠️ Using default configuration', 'warning');
+                    // Set default values
+                    document.getElementById('wahaUrl').value = 'http://localhost:5000';
+                    document.getElementById('wahaVersion').value = 'plus';
+                    document.getElementById('typingEnabled').checked = true;
                     toggleTypingDuration();
                 }
-                if (config.typingDuration) {
-                    document.getElementById('typingDuration').value = config.typingDuration / 1000;
-                }
-                
-                addLog('✅ Configuration loaded successfully', 'success');
+
+                // Load sessions after config is loaded
+                console.log('🔄 Loading sessions on page load...');
+                await refreshSessions();
             } catch (error) {
-                console.error('Error loading config:', error);
-                addLog('⚠️ Error loading config: ' + error.message, 'warning');
+                console.error('Error during page load:', error);
+                addLog('⚠️ Error during initialization: ' + error.message, 'warning');
             }
         };
 
