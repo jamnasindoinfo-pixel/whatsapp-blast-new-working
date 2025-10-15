@@ -877,27 +877,51 @@
                 addLog(`✅ Campaign dibuat dengan ID: ${result.campaignId}`, 'success');
                 addLog('🚀 Memulai pengiriman ke semua nomor...', 'info');
 
-                // Realistic progress simulation
-                for (let i = 1; i <= phones.length; i++) {
-                    let currentDelay;
-                    if (delayConfig.type === 'random') {
-                        currentDelay = getRandomDelay(delayConfig.min, delayConfig.max);
-                        addLog(`⏳ Delay: ${currentDelay/1000}s untuk nomor ${i}`, 'info');
-                    } else {
-                        currentDelay = delayConfig.value * 1000;
-                    }
-                    
-                    await new Promise(resolve => setTimeout(resolve, currentDelay));
-                    updateProgress(i, phones.length);
-                    addLog(`✓ Pesan terkirim ke nomor ${i}`, 'success');
-                }
+                // REAL-TIME campaign progress tracking
+                addLog('📡 Monitoring campaign progress...', 'info');
+                addLog(`⏱️ Delay antar pesan: ${delayConfig.type === 'random' ? `${delayConfig.min}-${delayConfig.max}s (random)` : `${delayConfig.value}s`}`, 'info');
 
-                addLog('🎉 Blast selesai!', 'success');
-                addLog('📊 Cek dashboard untuk melihat detail', 'success');
-                
-                if (confirm('✅ Blast selesai! Total: ' + result.total + ' nomor\n\nBuka dashboard untuk melihat detail?')) {
-                    openDashboard();
-                }
+                // Start polling for real progress
+                const progressInterval = setInterval(async () => {
+                    try {
+                        const campaignResponse = await fetch(`${API_URL}/campaigns/${result.campaignId}`);
+                        const campaignData = await campaignResponse.json();
+
+                        if (campaignData.success) {
+                            const campaign = campaignData.data;
+                            const progress = campaign.total_targets > 0 ? (campaign.sent_count / campaign.total_targets * 100).toFixed(1) : 0;
+
+                            updateProgress(campaign.sent_count + campaign.failed_count, campaign.total_targets);
+
+                            if (campaign.status === 'completed') {
+                                clearInterval(progressInterval);
+                                addLog(`🎉 Blast selesai!`, 'success');
+                                addLog(`📊 Total terkirim: ${campaign.sent_count}`, 'success');
+                                addLog(`❌ Total gagal: ${campaign.failed_count}`, 'error');
+                                addLog(`💬 Total balasan: ${campaign.reply_count}`, 'info');
+                                addLog('📊 Cek dashboard untuk melihat detail', 'info');
+
+                                if (confirm(`✅ Blast selesai! Total: ${campaign.total_targets} nomor\n✅ Terkirim: ${campaign.sent_count}\n❌ Gagal: ${campaign.failed_count}\n\nBuka dashboard untuk melihat detail?`)) {
+                                    openDashboard();
+                                }
+                            } else if (campaign.status === 'running') {
+                                // Campaign is still running, show current progress
+                                const remaining = campaign.total_targets - campaign.sent_count - campaign.failed_count;
+                                addLog(`📊 Progress: ${progress}% (${campaign.sent_count}/${campaign.total_targets}) - Sisa: ${remaining}`, 'info');
+                            } else if (campaign.status === 'stopped') {
+                                clearInterval(progressInterval);
+                                addLog('⏹️ Campaign dihentikan', 'warning');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error checking campaign progress:', error);
+                    }
+                }, 2000); // Check every 2 seconds
+
+                // Stop checking after 5 minutes max (safety)
+                setTimeout(() => {
+                    clearInterval(progressInterval);
+                }, 300000);
             } catch (error) {
                 addLog('❌ Error: ' + error.message, 'error');
                 console.error('Blast text error:', error);
@@ -994,27 +1018,51 @@
                 addLog(`✅ Campaign dibuat dengan ID: ${result.campaignId}`, 'success');
                 addLog('🚀 Memulai pengiriman ke semua nomor...', 'info');
 
-                // Realistic progress simulation
-                for (let i = 1; i <= phones.length; i++) {
-                    let currentDelay;
-                    if (delayConfig.type === 'random') {
-                        currentDelay = getRandomDelay(delayConfig.min, delayConfig.max);
-                        addLog(`⏳ Delay: ${currentDelay/1000}s untuk nomor ${i}`, 'info');
-                    } else {
-                        currentDelay = delayConfig.value * 1000;
-                    }
-                    
-                    await new Promise(resolve => setTimeout(resolve, currentDelay));
-                    updateProgress(i, phones.length);
-                    addLog(`✓ Gambar terkirim ke nomor ${i}`, 'success');
-                }
+                // REAL-TIME campaign progress tracking
+                addLog('📡 Monitoring campaign progress...', 'info');
+                addLog(`⏱️ Delay antar pesan: ${delayConfig.type === 'random' ? `${delayConfig.min}-${delayConfig.max}s (random)` : `${delayConfig.value}s`}`, 'info');
 
-                addLog('🎉 Blast gambar selesai!', 'success');
-                addLog('📊 Cek dashboard untuk melihat detail', 'success');
-                
-                if (confirm('✅ Blast selesai! Total: ' + result.total + ' nomor\n\nBuka dashboard untuk melihat detail?')) {
-                    openDashboard();
-                }
+                // Start polling for real progress
+                const progressInterval = setInterval(async () => {
+                    try {
+                        const campaignResponse = await fetch(`${API_URL}/campaigns/${result.campaignId}`);
+                        const campaignData = await campaignResponse.json();
+
+                        if (campaignData.success) {
+                            const campaign = campaignData.data;
+                            const progress = campaign.total_targets > 0 ? (campaign.sent_count / campaign.total_targets * 100).toFixed(1) : 0;
+
+                            updateProgress(campaign.sent_count + campaign.failed_count, campaign.total_targets);
+
+                            if (campaign.status === 'completed') {
+                                clearInterval(progressInterval);
+                                addLog(`🎉 Blast gambar selesai!`, 'success');
+                                addLog(`📊 Total terkirim: ${campaign.sent_count}`, 'success');
+                                addLog(`❌ Total gagal: ${campaign.failed_count}`, 'error');
+                                addLog(`💬 Total balasan: ${campaign.reply_count}`, 'info');
+                                addLog('📊 Cek dashboard untuk melihat detail', 'info');
+
+                                if (confirm(`✅ Blast selesai! Total: ${campaign.total_targets} nomor\n✅ Terkirim: ${campaign.sent_count}\n❌ Gagal: ${campaign.failed_count}\n\nBuka dashboard untuk melihat detail?`)) {
+                                    openDashboard();
+                                }
+                            } else if (campaign.status === 'running') {
+                                // Campaign is still running, show current progress
+                                const remaining = campaign.total_targets - campaign.sent_count - campaign.failed_count;
+                                addLog(`📊 Progress: ${progress}% (${campaign.sent_count}/${campaign.total_targets}) - Sisa: ${remaining}`, 'info');
+                            } else if (campaign.status === 'stopped') {
+                                clearInterval(progressInterval);
+                                addLog('⏹️ Campaign dihentikan', 'warning');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error checking campaign progress:', error);
+                    }
+                }, 2000); // Check every 2 seconds
+
+                // Stop checking after 5 minutes max (safety)
+                setTimeout(() => {
+                    clearInterval(progressInterval);
+                }, 300000);
             } catch (error) {
                 addLog('❌ Error: ' + error.message, 'error');
                 console.error('Blast image error:', error);
@@ -1157,27 +1205,51 @@
                 addLog(`📱 Total target: ${result.total} nomor`, 'info');
                 addLog('🚀 Memulai pengiriman...', 'info');
 
-                // Realistic progress simulation
-                for (let i = 1; i <= phones.length; i++) {
-                    let currentDelay;
-                    if (delayConfig.type === 'random') {
-                        currentDelay = getRandomDelay(delayConfig.min, delayConfig.max);
-                        addLog(`⏳ Delay: ${currentDelay/1000}s untuk nomor ${i}`, 'info');
-                    } else {
-                        currentDelay = delayConfig.value * 1000;
-                    }
-                    
-                    await new Promise(resolve => setTimeout(resolve, currentDelay));
-                    updateProgress(i, phones.length);
-                    addLog(`✓ Gambar terkirim ke nomor ${i}`, 'success');
-                }
+                // REAL-TIME campaign progress tracking
+                addLog('📡 Monitoring campaign progress...', 'info');
+                addLog(`⏱️ Delay antar pesan: ${delayConfig.type === 'random' ? `${delayConfig.min}-${delayConfig.max}s (random)` : `${delayConfig.value}s`}`, 'info');
 
-                addLog('🎉 Blast selesai!', 'success');
-                addLog('📊 Cek dashboard untuk melihat detail', 'success');
-                
-                if (confirm('✅ Blast selesai! Total: ' + result.total + ' nomor\n\nBuka dashboard untuk melihat detail?')) {
-                    openDashboard();
-                }
+                // Start polling for real progress
+                const progressInterval = setInterval(async () => {
+                    try {
+                        const campaignResponse = await fetch(`${API_URL}/campaigns/${result.campaignId}`);
+                        const campaignData = await campaignResponse.json();
+
+                        if (campaignData.success) {
+                            const campaign = campaignData.data;
+                            const progress = campaign.total_targets > 0 ? (campaign.sent_count / campaign.total_targets * 100).toFixed(1) : 0;
+
+                            updateProgress(campaign.sent_count + campaign.failed_count, campaign.total_targets);
+
+                            if (campaign.status === 'completed') {
+                                clearInterval(progressInterval);
+                                addLog(`🎉 Blast selesai!`, 'success');
+                                addLog(`📊 Total terkirim: ${campaign.sent_count}`, 'success');
+                                addLog(`❌ Total gagal: ${campaign.failed_count}`, 'error');
+                                addLog(`💬 Total balasan: ${campaign.reply_count}`, 'info');
+                                addLog('📊 Cek dashboard untuk melihat detail', 'info');
+
+                                if (confirm(`✅ Blast selesai! Total: ${campaign.total_targets} nomor\n✅ Terkirim: ${campaign.sent_count}\n❌ Gagal: ${campaign.failed_count}\n\nBuka dashboard untuk melihat detail?`)) {
+                                    openDashboard();
+                                }
+                            } else if (campaign.status === 'running') {
+                                // Campaign is still running, show current progress
+                                const remaining = campaign.total_targets - campaign.sent_count - campaign.failed_count;
+                                addLog(`📊 Progress: ${progress}% (${campaign.sent_count}/${campaign.total_targets}) - Sisa: ${remaining}`, 'info');
+                            } else if (campaign.status === 'stopped') {
+                                clearInterval(progressInterval);
+                                addLog('⏹️ Campaign dihentikan', 'warning');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error checking campaign progress:', error);
+                    }
+                }, 2000); // Check every 2 seconds
+
+                // Stop checking after 5 minutes max (safety)
+                setTimeout(() => {
+                    clearInterval(progressInterval);
+                }, 300000);
             } catch (error) {
                 addLog('❌ Error: ' + error.message, 'error');
                 console.error('Upload blast error:', error);
