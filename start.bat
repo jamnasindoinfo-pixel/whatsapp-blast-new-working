@@ -1,5 +1,6 @@
 @echo off
 setlocal
+cd /d "%~dp0"
 echo Starting WA Blast Pro Server...
 echo --------------------------------
 
