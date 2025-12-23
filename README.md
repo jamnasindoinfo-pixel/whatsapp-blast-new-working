@@ -1,90 +1,95 @@
-# WA Blast Pro (Native Node.js Version)
+# WA Blast Pro (Versi Native Node.js)
 
-This project is a **WhatsApp Automation Tool** allowing you to blast messages (Text, Image, Video) to multiple contacts using `whatsapp-web.js`.
+Proyek ini adalah **Alat Otomasi WhatsApp** yang memungkinkan Anda mengirim pesan massal (Teks, Gambar, Video) ke banyak kontak menggunakan `whatsapp-web.js`.
 
-> **Update:** This project has been migrated from a Docker-based WAHA solution to a **native Node.js** implementation for better performance and easier setup.
+> **Update:**  Proyek ini telah dimigrasikan dari solusi WAHA berbasis Docker ke implementasi **Native Node.js** untuk performa yang lebih baik dan pengaturan yang lebih mudah.
 
-## 🚀 Features
-- **Native WhatsApp Integration**: Uses `whatsapp-web.js` (No Docker required).
-- **Multi-Type Messaging**: Send **Text**, **Image**, and **Video**.
-- **Campaign Management**: Create and track campaigns via database.
-- **Smart Delays**:
-  - **Fixed Delay**: Set a specific delay between messages.
-  - **Random Delay**: Set a range (min-max) to avoid ban detection.
-- **Dashboard**: Web Interface for scanning QR code and managing blasts.
-- **API Support**: Full REST API for integration.
+## 🚀 Fitur Utama
+- **Integrasi WhatsApp Native**: Menggunakan `whatsapp-web.js` (Tanpa ribet pakai Docker).
+- **Pengiriman Multi-Tipe**: Kirim **Teks**, **Gambar**, dan **Video**.
+- **Manajemen Campaign**: Buat dan lacak status pengiriman via database.
+- **Smart Delays (Anti-Banned)**:
+  - **Fixed Delay**: Atur jeda waktu tetap antar pesan.
+  - **Random Delay**: Atur rentang waktu acak (min-max) agar lebih aman dari deteksi spam.
+- **Dashboard**: Web Interface untuk scan QR dan mengelola blast.
+- **Dukungan API**: REST API lengkap untuk integrasi dengan sistem lain.
 
-## 🛠️ Installation & Setup
+## 🛠️ Instalasi & Pengaturan
 
-### Prerequisites
-- Node.js installed (v16 or higher)
-- Google Chrome installed (for Puppeteer)
+### Persyaratan
+- Node.js terinstal (v16 atau lebih baru)
+- Google Chrome terinstal (untuk Puppeteer)
 
-### Quick Start
-Simply run the included batch script:
+### Cara Mulai (Otomatis)
+Cukup jalankan script batch yang tersedia:
 ```bash
 start.bat
 ```
-This script will:
-1. Automatically install dependencies (`npm install`).
-2. Start the server.
+Script ini akan:
+1. Otomatis install semua dependency (`npm install`).
+2. Menjalankan server aplikasi.
 
-### Manual Start
+### Cara Mulai (Manual)
 ```bash
 npm install
 node server.js
 ```
 
-## 📱 Usage
-1. Open your browser to `http://localhost:4000`.
-2. Scan the **QR Code** with your WhatsApp.
-3. Once connected, you can use the dashboard to start blasts.
+## 📱 Cara Penggunaan
+1. Buka browser ke `http://localhost:4000`.
+2. Scan **QR Code** yang muncul menggunakan WhatsApp di HP Anda.
+3. Setelah terhubung "Connected", Anda bisa mulai menggunakan fitur blast di dashboard.
 
-## 📡 API Endpoints
+## 📡 Endpoint API
 
 ### Status
-- `GET /api/session-status`: Check connection status.
-- `GET /api/qr-code`: Get QR code image.
+- `GET /api/session-status`: Cek status koneksi.
+- `GET /api/qr-code`: Ambil gambar QR code.
 
-### Sending Messages
-- `POST /api/send-message`: Send a text message.
+### Kirim Pesan
+- `POST /api/send-message`: Kirim pesan teks.
   ```json
-  { "phone": "628123456789", "message": "Hello!" }
+  { "phone": "628123456789", "message": "Halo!" }
   ```
-- `POST /api/send-media`: Send media (Image/Video).
+- `POST /api/send-media`: Kirim media (Gambar/Video).
   ```json
   { 
     "phone": "628123456789", 
     "mediaUrl": "https://example.com/image.jpg", 
     "type": "image", 
-    "caption": "Check this out!" 
+    "caption": "Cek gambar ini!" 
   }
   ```
 
 ### Blasting (Campaigns)
-- `POST /api/blast/text`: Start a text blast.
-- `POST /api/blast/image`: Start an image blast.
+- `POST /api/blast/text`: Mulai blast pesan teks.
+- `POST /api/blast/image`: Mulai blast gambar.
 
-## 🧪 Testing
-We include a robust test suite to verify functionality.
+## 🧪 Testing (Pengujian)
+Kami menyertakan script testing lengkap untuk memastikan semua fitur berjalan lancar.
 
-**Unit Tests** (Utility functions):
+**Unit Tests** (Fungsi utilitas):
 ```bash
 node test-unit.js
 ```
 
-**End-to-End Tests**:
+**Comprehensive Tests** (Logika Campaign & Delay):
 ```bash
-# Test All Features
-node test-api.js all <PHONE_NUMBER>
-
-# Test Media Sending
-node test-api.js media <PHONE_NUMBER>
+node test-comprehensive.js
 ```
 
-## 📂 Project Structure
-- `server.js`: Main application server.
-- `database.js`: SQLite database manager.
-- `utils.js`: Utility functions.
-- `public/`: Frontend dashboard files.
-- `start.bat`: Quick start script for Windows.
+**End-to-End Tests**:
+```bash
+# Test Semua Fitur
+node test-api.js all <NOMOR_HP>
+
+# Test Kirim Media
+node test-api.js media <NOMOR_HP>
+```
+
+## 📂 Struktur Proyek
+- `server.js`: Server aplikasi utama.
+- `database.js`: Manajer database SQLite.
+- `utils.js`: Fungsi bantuan (helper).
+- `public/`: File frontend dashboard.
+- `start.bat`: Script untuk menjalankan aplikasi di Windows dengan mudah.

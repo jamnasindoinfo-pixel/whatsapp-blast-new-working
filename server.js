@@ -155,8 +155,59 @@ app.get('/api/test', (req, res) => {
   });
 });
 
+// Logout Endpoint
+app.post('/api/logout', async (req, res) => {
+  try {
+    if (clientReady) {
+      await client.logout();
+      // Client disconnect event will handle state reset
+      res.json({ success: true, message: 'Logged out successfully' });
+    } else {
+      res.status(400).json({ success: false, error: 'Not logged in' });
+    }
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
-// Send Message API
+// Unified Test Send Endpoint
+app.post('/api/test/send', async (req, res) => {
+  try {
+    const { phoneNumber, message, type, imageUrl, caption, sessionName } = req.body;
+
+    if (!phoneNumber) {
+      return res.status(400).json({ success: false, error: 'Phone number is required' });
+    }
+
+    if (!clientReady) {
+      return res.status(503).json({ success: false, error: 'WhatsApp client is not ready' });
+    }
+
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+    const chatId = `${formattedPhone}@c.us`;
+
+    console.log(`🔍 Test send to ${formattedPhone} type: ${type}`);
+
+    let response;
+    if (type === 'image') {
+      if (!imageUrl) return res.status(400).json({ success: false, error: 'Image URL required' });
+      const media = await MessageMedia.fromUrl(imageUrl, { unsafeMime: true });
+      response = await client.sendMessage(chatId, media, { caption: message || caption || '' });
+    } else {
+      if (!message) return res.status(400).json({ success: false, error: 'Message required' });
+      response = await client.sendMessage(chatId, message);
+    }
+
+    res.json({ success: true, data: { id: response.id._serialized } });
+
+  } catch (error) {
+    console.error('Test send error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Original Send Message API (kept for compatibility if needed)
 app.post('/api/send-message', async (req, res) => {
   try {
     const { phone, message, typingDuration } = req.body;
