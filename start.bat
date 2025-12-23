@@ -1,9 +1,17 @@
 @echo off
-echo Starting WA Blast Pro Server...
+setlocal
+echo 🚀 Starting WA Blast Pro Server...
 echo --------------------------------
-echo Ensuring dependencies are installed...
-call npm install
+
+if exist "node_modules" (
+    echo ✅ Dependencies already installed. Skipping 'npm install'.
+    echo    (Delete 'node_modules' folder if you need to reinstall)
+) else (
+    echo 📦 'node_modules' not found. Installing dependencies...
+    call npm install --no-audit --no-fund --loglevel=error
+)
+
 echo.
-echo Starting Server...
+echo 🟢 Starting Server...
 node server.js
 pause
