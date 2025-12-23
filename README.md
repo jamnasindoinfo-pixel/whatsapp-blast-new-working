@@ -34,7 +34,9 @@ Ikuti langkah-langkah berikut untuk menginstal dan menjalankan aplikasi ini dari
     ```
 2.  **Atau Download ZIP**:
     *   Klik tombol "Code" tang berwarna hijau di GitHub -> "Download ZIP".
-    *   Ekstrak file ZIP tersebut.
+    *   **PENTING**: Jangan jalankan file langsung dari dalam ZIP!
+    *   Klik kanan file ZIP -> pilih **Extract All** (Ekstrak Semua) -> Pilih folder tujuan.
+    *   Jalankan `start.bat` dari folder yang sudah diekstrak.
 
 ### Langkah 3: Menjalankan Aplikasi
 Kami menyediakan cara termudah menggunakan **start.bat** (Khusus Windows).
