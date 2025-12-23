@@ -1,0 +1,9 @@
+@echo off
+echo Starting WA Blast Pro Server...
+echo --------------------------------
+echo Ensuring dependencies are installed...
+call npm install
+echo.
+echo Starting Server...
+node server.js
+pause

@@ -53,6 +53,19 @@ function initTables() {
     }
   });
 
+  // Add delay_min column for random delays
+  db.all("PRAGMA table_info(campaigns)", (err, columns) => {
+    if (!err && columns && !columns.find(col => col.name === 'delay_min')) {
+      db.run("ALTER TABLE campaigns ADD COLUMN delay_min INTEGER DEFAULT 0", (alterErr) => {
+        if (alterErr) {
+          console.error('❌ Error adding delay_min column:', alterErr);
+        } else {
+          console.log('✅ Added delay_min column to campaigns table');
+        }
+      });
+    }
+  });
+
   // Table: messages
   db.run(`
     CREATE TABLE IF NOT EXISTS messages (
@@ -111,14 +124,14 @@ function initTables() {
 // ============ CAMPAIGN FUNCTIONS ============
 
 function createCampaign(data, callback) {
-  const { name, message, imageUrl, caption, type, totalTargets, typingDuration, delayBetweenMessages, sessionName } = data;
+  const { name, message, imageUrl, caption, type, totalTargets, typingDuration, delayBetweenMessages, delayMin, sessionName } = data;
 
   const sql = `
-    INSERT INTO campaigns (name, message, image_url, caption, type, total_targets, typing_duration, delay_between_messages, session_name)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO campaigns (name, message, image_url, caption, type, total_targets, typing_duration, delay_between_messages, delay_min, session_name)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
-  db.run(sql, [name, message, imageUrl, caption, type || 'text', totalTargets, typingDuration || 3000, delayBetweenMessages || 5000, sessionName || 'default'], function(err) {
+  db.run(sql, [name, message, imageUrl, caption, type || 'text', totalTargets, typingDuration || 3000, delayBetweenMessages || 5000, delayMin || 0, sessionName || 'default'], function (err) {
     callback(err, this ? this.lastID : null);
   });
 }
@@ -131,7 +144,7 @@ function updateCampaignStatus(campaignId, status, callback) {
         completed_at = CASE WHEN ? IN ('completed', 'failed') THEN CURRENT_TIMESTAMP ELSE completed_at END
     WHERE id = ?
   `;
-  
+
   db.run(sql, [status, status, status, campaignId], callback);
 }
 
@@ -145,7 +158,7 @@ function updateCampaignStats(campaignId, callback) {
       reply_count = (SELECT COUNT(*) FROM replies WHERE campaign_id = ?)
     WHERE id = ?
   `;
-  
+
   db.run(sql, [campaignId, campaignId, campaignId, campaignId, campaignId], callback);
 }
 
@@ -155,7 +168,7 @@ function getCampaigns(limit, callback) {
     ORDER BY created_at DESC 
     LIMIT ?
   `;
-  
+
   db.all(sql, [limit || 50], callback);
 }
 
@@ -176,13 +189,13 @@ function deleteCampaign(campaignId, callback) {
 
 function createMessage(data, callback) {
   const { campaignId, phoneNumber, message, status } = data;
-  
+
   const sql = `
     INSERT INTO messages (campaign_id, phone_number, message, status)
     VALUES (?, ?, ?, ?)
   `;
-  
-  db.run(sql, [campaignId, phoneNumber, message, status || 'pending'], function(err) {
+
+  db.run(sql, [campaignId, phoneNumber, message, status || 'pending'], function (err) {
     callback(err, this ? this.lastID : null);
   });
 }
@@ -198,7 +211,7 @@ function updateMessageStatus(messageId, status, wahaMessageId, errorMessage, cal
         read_at = CASE WHEN ? = 'read' THEN CURRENT_TIMESTAMP ELSE read_at END
     WHERE id = ?
   `;
-  
+
   db.run(sql, [status, wahaMessageId, errorMessage, status, status, status, messageId], callback);
 }
 
@@ -210,7 +223,7 @@ function getMessagesByPhone(phoneNumber, callback) {
     WHERE m.phone_number = ?
     ORDER BY m.created_at DESC
   `;
-  
+
   db.all(sql, [phoneNumber], callback);
 }
 
@@ -220,7 +233,7 @@ function getMessagesByCampaign(campaignId, callback) {
     WHERE campaign_id = ?
     ORDER BY created_at DESC
   `;
-  
+
   db.all(sql, [campaignId], callback);
 }
 
@@ -230,7 +243,7 @@ function getPendingMessages(campaignId, callback) {
     WHERE campaign_id = ? AND status = 'pending'
     ORDER BY id ASC
   `;
-  
+
   db.all(sql, [campaignId], callback);
 }
 
@@ -238,13 +251,13 @@ function getPendingMessages(campaignId, callback) {
 
 function createReply(data, callback) {
   const { messageId, campaignId, phoneNumber, replyText, replyType, mediaUrl, wahaReplyId } = data;
-  
+
   const sql = `
     INSERT INTO replies (message_id, campaign_id, phone_number, reply_text, reply_type, media_url, waha_reply_id)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
-  
-  db.run(sql, [messageId, campaignId, phoneNumber, replyText, replyType || 'text', mediaUrl, wahaReplyId], function(err) {
+
+  db.run(sql, [messageId, campaignId, phoneNumber, replyText, replyType || 'text', mediaUrl, wahaReplyId], function (err) {
     callback(err, this ? this.lastID : null);
   });
 }
@@ -257,7 +270,7 @@ function getRepliesByPhone(phoneNumber, callback) {
     WHERE r.phone_number = ?
     ORDER BY r.received_at DESC
   `;
-  
+
   db.all(sql, [phoneNumber], callback);
 }
 
@@ -267,7 +280,7 @@ function getRepliesByCampaign(campaignId, callback) {
     WHERE campaign_id = ?
     ORDER BY received_at DESC
   `;
-  
+
   db.all(sql, [campaignId], callback);
 }
 
@@ -279,7 +292,7 @@ function getUnreadReplies(callback) {
     WHERE r.is_read = 0
     ORDER BY r.received_at DESC
   `;
-  
+
   db.all(sql, [], callback);
 }
 
@@ -299,7 +312,7 @@ function upsertContact(phoneNumber, name, callback) {
       name = COALESCE(?, name),
       updated_at = CURRENT_TIMESTAMP
   `;
-  
+
   db.run(sql, [phoneNumber, name, name], callback);
 }
 
@@ -312,7 +325,7 @@ function updateContactStats(phoneNumber, callback) {
       total_replies = (SELECT COUNT(*) FROM replies WHERE phone_number = ?)
     WHERE phone_number = ?
   `;
-  
+
   db.run(sql, [phoneNumber, phoneNumber, phoneNumber, phoneNumber], callback);
 }
 
@@ -322,7 +335,7 @@ function getContacts(callback) {
     WHERE is_blocked = 0
     ORDER BY last_message_at DESC
   `;
-  
+
   db.all(sql, [], callback);
 }
 
